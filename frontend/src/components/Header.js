@@ -10,10 +10,10 @@ const Header = ({ onCartOpen }) => {
   const { getItemCount } = useCart();
 
   const categories = [
-    { name: 'Rings', path: '/?category=rings' },
-    { name: 'Necklaces', path: '/?category=necklaces' },
-    { name: 'Earrings', path: '/?category=earrings' },
-    { name: 'Bracelets', path: '/?category=bracelets' }
+    { name: 'Rings', category: 'rings' },
+    { name: 'Necklaces', category: 'necklaces' },
+    { name: 'Earrings', category: 'earrings' },
+    { name: 'Bracelets', category: 'bracelets' }
   ];
 
   const handleSearch = (e) => {
@@ -21,6 +21,12 @@ const Header = ({ onCartOpen }) => {
     if (searchQuery.trim()) {
       window.location.href = `/?search=${encodeURIComponent(searchQuery.trim())}`;
     }
+  };
+
+  const handleCategoryClick = (category) => {
+    const currentUrl = new URL(window.location);
+    currentUrl.searchParams.set('category', category);
+    window.location.href = currentUrl.toString();
   };
 
   return (
@@ -47,14 +53,14 @@ const Header = ({ onCartOpen }) => {
               <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-text-primary transition-all duration-300 group-hover:w-full"></span>
             </Link>
             {categories.map((category) => (
-              <Link
+              <button
                 key={category.name}
-                to={category.path}
+                onClick={() => handleCategoryClick(category.category)}
                 className="text-luxury-charcoal hover:text-text-primary font-ibm-plex font-semibold transition-all duration-300 relative group"
               >
                 {category.name}
                 <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-text-primary transition-all duration-300 group-hover:w-full"></span>
-              </Link>
+              </button>
             ))}
           </nav>
 
@@ -126,14 +132,16 @@ const Header = ({ onCartOpen }) => {
                 Shop
               </Link>
               {categories.map((category) => (
-                <Link
+                <button
                   key={category.name}
-                  to={category.path}
-                  className="text-luxury-charcoal hover:text-text-primary font-ibm-plex font-semibold transition-colors duration-300 text-base"
-                  onClick={() => setIsMenuOpen(false)}
+                  onClick={() => {
+                    handleCategoryClick(category.category);
+                    setIsMenuOpen(false);
+                  }}
+                  className="text-luxury-charcoal hover:text-text-primary font-ibm-plex font-semibold transition-colors duration-300 text-base text-left w-full"
                 >
                   {category.name}
-                </Link>
+                </button>
               ))}
             </nav>
           </div>

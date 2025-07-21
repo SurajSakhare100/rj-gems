@@ -1,9 +1,9 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { MessageCircle, Send, X, Sparkles, Bot, User, ShoppingBag, AlertCircle, Loader2 } from 'lucide-react';
+import { MessageCircle, Send, X, Sparkles, Bot, User, ShoppingBag, AlertCircle, Loader2, Loader, LoaderIcon, LucideLoader2 } from 'lucide-react';
 import { useCart } from '../hooks/useCart';
 import axios from 'axios';
 import toast from 'react-hot-toast';
-import { AI_CONFIG, validateInput, validateContext, validatePreferences, extractJewelryPreferences } from '../config/ai';
+import { AI_CONFIG, validateInput, validateContext, validatePreferences, extractJewelryPreferences, callGeminiAPI } from '../config/ai';
 
 const JewelryChatbot = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -36,8 +36,6 @@ const JewelryChatbot = () => {
           throw new Error('API URL not configured');
         }
 
-        console.log('Fetching products from:', `${apiUrl}/api/products`);
-
         const response = await axios.get(`${apiUrl}/api/products`, {
           timeout: 15000, // 15 second timeout
           headers: {
@@ -45,11 +43,8 @@ const JewelryChatbot = () => {
           }
         });
 
-        console.log('API Response:', response.data);
-
         if (response.data && response.data.success && Array.isArray(response.data.data)) {
           const fetchedProducts = response.data.data;
-          console.log('Fetched products:', fetchedProducts.length);
           
           // Validate and clean the product data
           const validatedProducts = fetchedProducts.map(product => ({
@@ -68,7 +63,6 @@ const JewelryChatbot = () => {
           }));
 
           setProducts(validatedProducts);
-          console.log('Validated products set:', validatedProducts.length);
         } else {
           throw new Error('Invalid API response format');
         }
@@ -122,7 +116,6 @@ const JewelryChatbot = () => {
   // Generate recommendations from real database
   const generateRecommendations = (preferences, availableProducts) => {
     if (!availableProducts || availableProducts.length === 0) {
-      console.log('No products available for recommendations');
       return [];
     }
 
@@ -181,7 +174,6 @@ const JewelryChatbot = () => {
       return 0;
     });
 
-    console.log('Filtered products:', filteredProducts.length);
     return filteredProducts.slice(0, AI_CONFIG.VALIDATION.MAX_RECOMMENDATIONS);
   };
 
@@ -193,7 +185,7 @@ const JewelryChatbot = () => {
     let response = `Perfect! I found some ${styleName} ${categoryName} pieces that match your preferences:\n\n`;
     
     recommendations.forEach((item, index) => {
-      response += `${index + 1}. **${item.name}** - ${formatPrice(item.price)}\n`;
+      response += `${index + 1}. ${item.name} - ${formatPrice(item.price)}\n`;
       response += `   ${item.metalType} • ${item.style} style • Perfect for ${item.occasion}\n`;
       if (item.rating) {
         response += `   ⭐ ${item.rating}/5 (${item.reviewCount} reviews)\n`;
@@ -212,7 +204,7 @@ const JewelryChatbot = () => {
       return `I apologize, but I'm currently unable to access our product database. Please try again in a moment, or you can browse our collection directly on the website.`;
     }
 
-    return `I'd love to help you find the perfect jewelry! Could you tell me more about what you're looking for?\n\n**Some helpful details:**\n• Type: rings, necklaces, earrings, bracelets\n• Occasion: engagement, wedding, daily wear, formal events\n• Metal: gold, white gold, rose gold, silver\n• Style: classic, modern, vintage, minimalist\n• Budget: affordable, luxury, or specific price range\n\nI have ${products.length} beautiful pieces in our collection to choose from!`;
+    return `I'd love to help you find the perfect jewelry! Could you tell me more about what you're looking for?\n\nSome helpful details:\n• Type: rings, necklaces, earrings, bracelets\n• Occasion: engagement, wedding, daily wear, formal events\n• Metal: gold, white gold, rose gold, silver\n• Style: classic, modern, vintage, minimalist\n• Budget: affordable, luxury, or specific price range\n\nI have ${products.length} beautiful pieces in our collection to choose from!`;
   };
 
   // Google Gemini AI integration with real data
@@ -399,7 +391,7 @@ const JewelryChatbot = () => {
                   className="text-white hover:text-gray-200 transition-colors p-1"
                   title="Reset conversation"
                 >
-                  <Loader2 className="h-4 w-4" />
+                  <Loader className="h-4 w-4" />
                 </button>
                 <button
                   onClick={() => setIsOpen(false)}
