@@ -56,7 +56,7 @@ export const CartProvider = ({ children }) => {
 
   // Get API URL with fallback
   const getApiUrl = () => {
-    return process.env.REACT_APP_API_URL || 'http://localhost:5000';
+    return process.env.REACT_APP_API_URL;
   };
 
   const loadCart = useCallback(async () => {
@@ -66,10 +66,14 @@ export const CartProvider = ({ children }) => {
       const response = await axios.get(`${apiUrl}/api/cart/${sessionId}`);
       
       if (response.data.success) {
-        dispatch({ type: 'SET_ITEMS', payload: response.data.data.items || [] });
+        dispatch({ 
+          type: 'SET_ITEMS', 
+          payload: response.data.data.items || [] 
+        });
       }
     } catch (error) {
       // Error handling without console.log
+      dispatch({ type: 'SET_LOADING', payload: false });
     }
   }, []);
 
@@ -86,8 +90,7 @@ export const CartProvider = ({ children }) => {
       const response = await axios.post(`${apiUrl}/api/cart/${sessionId}/add`, {
         productId: product._id,
         quantity,
-        variant: selectedVariant,
-        price: selectedVariant ? selectedVariant.price : product.price
+        selectedVariant
       });
 
       if (response.data.success) {
@@ -112,8 +115,7 @@ export const CartProvider = ({ children }) => {
       const sessionId = getSessionId();
       const apiUrl = getApiUrl();
       
-      const response = await axios.put(`${apiUrl}/api/cart/${sessionId}/update`, {
-        itemId,
+      const response = await axios.put(`${apiUrl}/api/cart/${sessionId}/update/${itemId}`, {
         quantity
       });
 
@@ -139,9 +141,7 @@ export const CartProvider = ({ children }) => {
       const sessionId = getSessionId();
       const apiUrl = getApiUrl();
       
-      const response = await axios.delete(`${apiUrl}/api/cart/${sessionId}/remove`, {
-        data: { itemId }
-      });
+      const response = await axios.delete(`${apiUrl}/api/cart/${sessionId}/remove/${itemId}`);
 
       if (response.data.success) {
         dispatch({ 

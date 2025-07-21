@@ -62,7 +62,7 @@ const CartDrawer = ({ isOpen, onClose }) => {
             <div className="p-4 space-y-4">
               {items.map((item) => {
                 // Skip items without product data
-                if (!item.productId) {
+                if (!item.productId || !item._id) {
                   return null;
                 }
 

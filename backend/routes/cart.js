@@ -85,6 +85,13 @@ router.post('/:sessionId/add', async (req, res) => {
       });
     }
     
+    // Recalculate total
+    cart.total = cart.items.reduce((sum, item) => {
+      const itemPrice = item.price || 0;
+      const itemQuantity = item.quantity || 0;
+      return sum + (itemPrice * itemQuantity);
+    }, 0);
+    
     await cart.save();
     
     // Populate product details
@@ -144,6 +151,14 @@ router.put('/:sessionId/update/:itemId', async (req, res) => {
     }
     
     item.quantity = quantity;
+    
+    // Recalculate total
+    cart.total = cart.items.reduce((sum, item) => {
+      const itemPrice = item.price || 0;
+      const itemQuantity = item.quantity || 0;
+      return sum + (itemPrice * itemQuantity);
+    }, 0);
+    
     await cart.save();
     
     await cart.populate('items.productId');
@@ -176,6 +191,14 @@ router.delete('/:sessionId/remove/:itemId', async (req, res) => {
     }
     
     cart.items = cart.items.filter(item => item._id.toString() !== itemId);
+    
+    // Recalculate total
+    cart.total = cart.items.reduce((sum, item) => {
+      const itemPrice = item.price || 0;
+      const itemQuantity = item.quantity || 0;
+      return sum + (itemPrice * itemQuantity);
+    }, 0);
+    
     await cart.save();
     
     await cart.populate('items.productId');

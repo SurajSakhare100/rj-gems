@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { MessageCircle, Send, X, Sparkles, Bot, User, Heart, ShoppingBag, AlertCircle, Loader2 } from 'lucide-react';
+import { MessageCircle, Send, X, Sparkles, Bot, User, ShoppingBag, AlertCircle, Loader2 } from 'lucide-react';
 import { useCart } from '../hooks/useCart';
 import axios from 'axios';
 import toast from 'react-hot-toast';
