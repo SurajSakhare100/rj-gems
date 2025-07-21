@@ -1,7 +1,7 @@
 // AI Configuration and Validation Rules
 export const AI_CONFIG = {
   // Google Gemini API Configuration
-  GEMINI_API_KEY: process.env.REACT_APP_GEMINI_API_KEY,
+  GEMINI_API_KEY: process.env.GEMINI_API_KEY,
   GEMINI_API_URL: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent',
   
   // Validation Rules
