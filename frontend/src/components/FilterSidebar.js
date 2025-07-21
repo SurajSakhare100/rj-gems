@@ -63,8 +63,8 @@ const FilterSidebar = ({ filters, onFilterChange, onClearFilters }) => {
   };
 
   return (
-    <div className="bg-white border-b border-luxury-silver py-4">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="bg-white mt-4  border-luxury-silver py-4">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 " >
         {/* Breadcrumbs */}
         <div className="mb-4">
           <nav className="text-sm">

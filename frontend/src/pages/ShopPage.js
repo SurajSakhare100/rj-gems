@@ -3,7 +3,6 @@ import { useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import ProductGrid from '../components/ProductGrid';
 import FilterSidebar from '../components/FilterSidebar';
-import HeroSection from '../components/HeroSection';
 import { Sparkles } from 'lucide-react';
 
 const ShopPage = () => {
@@ -30,7 +29,7 @@ const ShopPage = () => {
       }
       if (filters.sort) params.append('sort', filters.sort);
 
-      const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+      const apiUrl = process.env.REACT_APP_API_URL;
       const response = await axios.get(`${apiUrl}/api/products?${params}`);
       setProducts(response.data.data);
     } catch (error) {
@@ -62,12 +61,11 @@ const ShopPage = () => {
 
   return (
     <div className="min-h-screen bg-white">
-      <HeroSection />
       <FilterSidebar filters={filters} onFilterChange={handleFilterChange} onClearFilters={clearFilters} />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-luxury-charcoal mb-2">
-            {filters.category ? `${filters.category.charAt(0).toUpperCase() + filters.category.slice(1)}` : 'All Jewelry'}
+            {filters.category ? `${filters.category.charAt(0).toUpperCase() + filters.category.slice(1)}` : 'All Products'}
           </h1>
           <p className="text-luxury-charcoal/60">{products.length} {products.length === 1 ? 'item' : 'items'} found</p>
         </div>

@@ -5,7 +5,7 @@ import { CartProvider } from './hooks/useCart';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import CartDrawer from './components/CartDrawer';
-import HomePage from './pages/HomePage';
+import JewelryChatbot from './components/JewelryChatbot';
 import ShopPage from './pages/ShopPage';
 import ProductDetailPage from './pages/ProductDetailPage';
 import './index.css';
@@ -35,6 +35,7 @@ function App() {
           </main>
           <Footer />
           <CartDrawer isOpen={isCartOpen} onClose={handleCartClose} />
+          <JewelryChatbot />
           <Toaster 
             position="bottom-left"
             toastOptions={{
