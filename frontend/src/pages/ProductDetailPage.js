@@ -29,7 +29,7 @@ const ProductDetailPage = () => {
           }
         }
       } catch (error) {
-        console.error('Error fetching product:', error);
+        // Error handling without console.log
       } finally {
         setLoading(false);
       }
@@ -44,7 +44,7 @@ const ProductDetailPage = () => {
           setRecommendations(response.data.data);
         }
       } catch (error) {
-        console.error('Error fetching recommendations:', error);
+        // Error handling without console.log
       } finally {
         setRecommendationsLoading(false);
       }
@@ -197,9 +197,9 @@ const ProductDetailPage = () => {
                     <button
                       key={index}
                       onClick={() => setSelectedVariant(variant)}
-                      className={`p-3 border-2 text-left transition-all  duration-200 ${
+                      className={`p-3 border-2 text-left transition-all duration-200 ${
                         selectedVariant === variant
-                            ? 'border-text-primary text-text-primary font-ibm-plex font-semibold bg-text-primary/5'
+                          ? 'border-text-primary text-text-primary font-ibm-plex font-semibold bg-text-primary/5'
                           : 'border-luxury-silver hover:border-luxury-charcoal/30'
                       }`}
                     >

@@ -9,39 +9,17 @@ router.get('/', async (req, res) => {
     
     let query = {};
     
-    // Category filter
-    if (category) {
-      query.category = category;
-    }
-    
-    // Collection filter
-    if (collection) {
-      query.productCollection = collection;
-    }
-    
-    // Metal type filter
-    if (metalType) {
-      query.metalType = metalType;
-    }
-    
-    // Price range filter
+    if (category) query.category = category;
+    if (collection) query.productCollection = collection;
+    if (metalType) query.metalType = metalType;
     if (minPrice || maxPrice) {
       query.price = {};
-      if (minPrice) query.price.$gte = Number(minPrice);
-      if (maxPrice) query.price.$lte = Number(maxPrice);
+      if (minPrice) query.price.$gte = parseFloat(minPrice);
+      if (maxPrice) query.price.$lte = parseFloat(maxPrice);
     }
-    
-    // Featured filter
-    if (featured === 'true') {
-      query.featured = true;
-    }
-    
-    // Search functionality
-    if (search) {
-      query.$text = { $search: search };
-    }
-    
-    // Build sort object
+    if (featured === 'true') query.featured = true;
+    if (search) query.$text = { $search: search };
+
     let sortObject = {};
     switch (sort) {
       case 'price-low':
@@ -61,7 +39,7 @@ router.get('/', async (req, res) => {
         sortObject = { createdAt: -1, featured: -1 };
         break;
     }
-    
+
     const products = await Product.find(query).sort(sortObject);
     
     res.json({
@@ -72,13 +50,12 @@ router.get('/', async (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Error fetching products',
-      error: error.message
+      error: 'Failed to fetch products'
     });
   }
 });
 
-// Get single product
+// Get single product by ID
 router.get('/:id', async (req, res) => {
   try {
     const product = await Product.findById(req.params.id);
@@ -86,7 +63,7 @@ router.get('/:id', async (req, res) => {
     if (!product) {
       return res.status(404).json({
         success: false,
-        message: 'Product not found'
+        error: 'Product not found'
       });
     }
     
@@ -97,13 +74,12 @@ router.get('/:id', async (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Error fetching product',
-      error: error.message
+      error: 'Failed to fetch product'
     });
   }
 });
 
-// AI Recommendation Engine
+// Get product recommendations
 router.get('/:id/recommendations', async (req, res) => {
   try {
     const currentProduct = await Product.findById(req.params.id);
@@ -111,11 +87,10 @@ router.get('/:id/recommendations', async (req, res) => {
     if (!currentProduct) {
       return res.status(404).json({
         success: false,
-        message: 'Product not found'
+        error: 'Product not found'
       });
     }
     
-    // Smart recommendation algorithm
     const recommendations = await getRecommendations(currentProduct);
     
     res.json({
@@ -123,70 +98,15 @@ router.get('/:id/recommendations', async (req, res) => {
       data: recommendations
     });
   } catch (error) {
+    // Error handling without console.log
     res.status(500).json({
       success: false,
-      message: 'Error generating recommendations',
-      error: error.message
+      error: 'Failed to fetch recommendations'
     });
   }
 });
 
-// AI Recommendation Logic
-async function getRecommendations(currentProduct) {
-  try {
-    // Get all products except current one
-    const allProducts = await Product.find({ _id: { $ne: currentProduct._id } });
-    
-    // Score each product based on multiple factors
-    const scoredProducts = allProducts.map(product => {
-      let score = 0;
-      
-      // Same metal type (high priority)
-      if (product.metalType === currentProduct.metalType) {
-        score += 50;
-      }
-      
-      // Different category (complementary pieces)
-      if (product.category !== currentProduct.category) {
-        score += 30;
-      }
-      
-      // Similar price range (±$300)
-      const priceDiff = Math.abs(product.price - currentProduct.price);
-      if (priceDiff <= 300) {
-        score += 20;
-      } else if (priceDiff <= 600) {
-        score += 10;
-      }
-      
-      // Featured products get bonus
-      if (product.featured) {
-        score += 15;
-      }
-      
-      // Higher ratings get bonus
-      score += product.rating * 2;
-      
-      // Popular products (more reviews) get bonus
-      score += Math.min(product.reviewCount / 10, 10);
-      
-      return { product, score };
-    });
-    
-    // Sort by score and return top 6
-    const topRecommendations = scoredProducts
-      .sort((a, b) => b.score - a.score)
-      .slice(0, 6)
-      .map(item => item.product);
-    
-    return topRecommendations;
-  } catch (error) {
-    console.error('Error in recommendation algorithm:', error);
-    return [];
-  }
-}
-
-// Get categories
+// Get all categories, metal types, and collections
 router.get('/categories/all', async (req, res) => {
   try {
     const categories = await Product.distinct('category');
@@ -204,10 +124,65 @@ router.get('/categories/all', async (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Error fetching categories',
-      error: error.message
+      error: 'Failed to fetch categories'
     });
   }
 });
+
+// AI Recommendation Algorithm
+async function getRecommendations(currentProduct) {
+  try {
+    const { category, metalType, price, productCollection } = currentProduct;
+    
+    // Base query - exclude current product
+    let query = { _id: { $ne: currentProduct._id } };
+    
+    // Find products in the same category but different collections
+    const sameCategoryDifferentCollection = await Product.find({
+      ...query,
+      category,
+      productCollection: { $ne: productCollection }
+    }).limit(3);
+    
+    // Find products in the same collection but different categories
+    const sameCollectionDifferentCategory = await Product.find({
+      ...query,
+      productCollection,
+      category: { $ne: category }
+    }).limit(2);
+    
+    // Find products with similar price range (±20%)
+    const priceRange = price * 0.2;
+    const similarPrice = await Product.find({
+      ...query,
+      price: { $gte: price - priceRange, $lte: price + priceRange }
+    }).limit(2);
+    
+    // Find products with same metal type
+    const sameMetalType = await Product.find({
+      ...query,
+      metalType
+    }).limit(2);
+    
+    // Combine and deduplicate recommendations
+    const allRecommendations = [
+      ...sameCategoryDifferentCollection,
+      ...sameCollectionDifferentCategory,
+      ...similarPrice,
+      ...sameMetalType
+    ];
+    
+    // Remove duplicates based on _id
+    const uniqueRecommendations = allRecommendations.filter((product, index, self) =>
+      index === self.findIndex(p => p._id.toString() === product._id.toString())
+    );
+    
+    // Return top 6 recommendations
+    return uniqueRecommendations.slice(0, 6);
+  } catch (error) {
+    // Error handling without console.log
+    return [];
+  }
+}
 
 module.exports = router; 
