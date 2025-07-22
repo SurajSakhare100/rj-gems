@@ -1,277 +1,98 @@
-// AI Configuration and Validation Rules
-export const AI_CONFIG = {
-  // Google Gemini API Configuration
-  GEMINI_API_KEY: process.env.GEMINI_API_KEY,
-  GEMINI_API_URL: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent',
-  
-  // Validation Rules
-  VALIDATION: {
-    MAX_MESSAGE_LENGTH: 500,
-    MAX_CONVERSATION_LENGTH: 50,
-    MAX_RECOMMENDATIONS: 3,
-    TYPING_DELAY: 2000, // milliseconds
-    API_TIMEOUT: 10000, // milliseconds
-  },
-  
-  // Allowed Values for Validation
-  ALLOWED_VALUES: {
-    CATEGORIES: ['rings', 'necklaces', 'earrings', 'bracelets'],
-    METALS: ['gold', 'white gold', 'rose gold', 'platinum', 'sterling silver'],
-    STYLES: ['classic', 'modern', 'vintage', 'minimalist', 'luxury', 'elegant'],
-    OCCASIONS: ['engagement', 'wedding', 'anniversary', 'daily', 'formal', 'casual', 'gift'],
-    BUDGETS: ['low', 'medium', 'high'],
-  },
-  
-  // Content Filtering
-  CONTENT_FILTER: {
-    INAPPROPRIATE_WORDS: ['spam', 'scam', 'hack', 'virus', 'malware', 'phishing'],
-    JEWELRY_KEYWORDS: [
-      'ring', 'necklace', 'earring', 'bracelet', 'jewelry', 'diamond', 
-      'gold', 'silver', 'engagement', 'wedding', 'gem', 'stone', 'precious',
-      'luxury', 'fashion', 'accessory', 'ornament', 'adornment'
-    ],
-    MIN_JEWELRY_CONTEXT_RATIO: 0.3, // 30% of recent messages should be jewelry-related
-  },
-  
-  // AI Prompt Templates
-  PROMPTS: {
-    JEWELRY_EXPERT: `You are a luxury jewelry expert assistant for RJ Gems. 
-    Your role is to help customers find the perfect jewelry pieces.
-    
-    Guidelines:
-    - Keep responses under 200 words
-    - Focus only on jewelry-related topics
-    - Be professional and helpful
-    - If asked about non-jewelry topics, politely redirect to jewelry
-    - Use the customer's preferences to make personalized recommendations
-    - Always maintain a luxury, premium tone
-    
-    Available product categories: rings, necklaces, earrings, bracelets
-    Available metals: gold, white gold, rose gold, platinum, sterling silver
-    Available styles: classic, modern, vintage, minimalist, luxury, elegant
-    Available occasions: engagement, wedding, anniversary, daily, formal, casual, gift`,
-    
-    RECOMMENDATION: `Based on the user's preferences and our available products, 
-    provide personalized jewelry recommendations. Consider:
-    - Category preference
-    - Metal type preference  
-    - Style preference
-    - Occasion
-    - Budget range
-    - Previous conversation context`,
-    
-    CONTEXT_AWARE: `Maintain conversation context and build upon previous interactions.
-    Remember user preferences and provide consistent recommendations.
-    If the conversation drifts away from jewelry, gently guide it back.`
-  },
-  
-  // Error Messages
-  ERRORS: {
-    API_UNAVAILABLE: 'AI service temporarily unavailable. Please try again later.',
-    INVALID_INPUT: 'Please provide a valid message.',
-    TOO_LONG: 'Message too long. Please keep it under 500 characters.',
-    INAPPROPRIATE_CONTENT: 'Message contains inappropriate content.',
-    CONTEXT_DRIFT: 'Please keep the conversation focused on jewelry recommendations.',
-    CONVERSATION_LIMIT: 'Conversation too long. Please start a new conversation.',
-    VALIDATION_FAILED: 'Input validation failed. Please check your message.',
-  },
-  
-  // Success Messages
-  SUCCESS: {
-    PRODUCT_ADDED: 'Product added to cart successfully!',
-    RECOMMENDATION_GENERATED: 'Personalized recommendations generated.',
-    CONTEXT_UPDATED: 'Preferences updated successfully.',
-  }
+import { GoogleGenerativeAI } from '@google/generative-ai';
+
+// Initialize Gemini AI
+const genAI = new GoogleGenerativeAI(process.env.REACT_APP_GEMINI_API_KEY);
+
+// Chatbot configuration (using free tier)
+export const chatbotConfig = {
+  model: 'gemini-1.5-flash',
+  temperature: 0.7,
+  maxTokens: 1000,
+  topP: 0.8,
+  topK: 40,
 };
 
-// Validation Functions
-export const validateInput = (input, config = AI_CONFIG) => {
-  const errors = [];
-
-  // Check for empty or whitespace-only input
-  if (!input || !input.trim()) {
-    errors.push(config.ERRORS.INVALID_INPUT);
-    return { isValid: false, errors };
-  }
-
-  // Check message length
-  if (input.length > config.VALIDATION.MAX_MESSAGE_LENGTH) {
-    errors.push(config.ERRORS.TOO_LONG);
-  }
-
-  // Check for inappropriate content
-  const lowerInput = input.toLowerCase();
-  if (config.CONTENT_FILTER.INAPPROPRIATE_WORDS.some(word => lowerInput.includes(word))) {
-    errors.push(config.ERRORS.INAPPROPRIATE_CONTENT);
-  }
-
-  // Check for excessive repetition
-  const words = input.split(' ');
-  const uniqueWords = new Set(words);
-  if (words.length > 10 && uniqueWords.size / words.length < 0.3) {
-    errors.push('Message contains too much repetition');
-  }
-
-  return { isValid: errors.length === 0, errors };
+// Initialize the model
+export const getModel = () => {
+  return genAI.getGenerativeModel({ 
+    model: chatbotConfig.model,
+    generationConfig: {
+      temperature: chatbotConfig.temperature,
+      maxOutputTokens: chatbotConfig.maxTokens,
+      topP: chatbotConfig.topP,
+      topK: chatbotConfig.topK,
+    },
+  });
 };
 
-export const validateContext = (messages, config = AI_CONFIG) => {
-  const errors = [];
-
-  // Check conversation length
-  if (messages.length > config.VALIDATION.MAX_CONVERSATION_LENGTH) {
-    errors.push(config.ERRORS.CONVERSATION_LIMIT);
-  }
-
-  // Check for context drift
-  const recentMessages = messages.slice(-5);
-  const hasJewelryContext = recentMessages.some(msg => 
-    config.CONTENT_FILTER.JEWELRY_KEYWORDS.some(word => 
-      msg.content.toLowerCase().includes(word)
-    )
-  );
-
-  if (messages.length > 10 && !hasJewelryContext) {
-    errors.push(config.ERRORS.CONTEXT_DRIFT);
-  }
-
-  return { isValid: errors.length === 0, errors };
+// API endpoints
+export const API_ENDPOINTS = {
+  CHAT: '/api/chatbot/chat',
+  SEARCH: '/api/chatbot/search',
+  RECOMMENDATIONS: '/api/chatbot/recommendations',
 };
 
-export const validatePreferences = (preferences, config = AI_CONFIG) => {
-  const validated = {};
+// Base API URL
+export const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
-  if (preferences.category && config.ALLOWED_VALUES.CATEGORIES.includes(preferences.category)) {
-    validated.category = preferences.category;
-  }
+// Chatbot system prompt
+export const SYSTEM_PROMPT = `You are a helpful AI assistant for a luxury jewelry e-commerce store. You can help customers with:
 
-  if (preferences.metalType && config.ALLOWED_VALUES.METALS.includes(preferences.metalType)) {
-    validated.metalType = preferences.metalType;
-  }
+1. Product recommendations based on preferences, budget, and occasions
+2. Jewelry care and maintenance advice
+3. Information about different metals, stones, and jewelry types
+4. Sizing and fitting guidance
+5. Gift suggestions for different occasions
+6. Answering questions about our products and services
 
-  if (preferences.style && config.ALLOWED_VALUES.STYLES.includes(preferences.style)) {
-    validated.style = preferences.style;
-  }
+Always be helpful, professional, and provide accurate information about jewelry. Keep responses concise but informative.`;
 
-  if (preferences.occasion && config.ALLOWED_VALUES.OCCASIONS.includes(preferences.occasion)) {
-    validated.occasion = preferences.occasion;
-  }
+// Quick response templates
+export const QUICK_RESPONSES = [
+  "Show me luxury engagement rings",
+  "I need a special gift for my anniversary",
+  "What's the best metal for everyday wear?",
+  "How do I care for gold jewelry?",
+  "Recommend something under $1000",
+];
 
-  if (preferences.budget && config.ALLOWED_VALUES.BUDGETS.includes(preferences.budget)) {
-    validated.budget = preferences.budget;
-    validated.priceRange = preferences.priceRange;
-  }
+// Product categories for quick filtering
+export const PRODUCT_CATEGORIES = [
+  { value: 'rings', label: 'Rings' },
+  { value: 'necklaces', label: 'Necklaces' },
+  { value: 'earrings', label: 'Earrings' },
+  { value: 'bracelets', label: 'Bracelets' },
+];
 
-  return validated;
+// Metal types for filtering
+export const METAL_TYPES = [
+  { value: '14k Gold', label: '14k Gold' },
+  { value: 'Sterling Silver', label: 'Sterling Silver' },
+  { value: 'Rose Gold', label: 'Rose Gold' },
+  { value: 'White Gold', label: 'White Gold' },
+  { value: 'Platinum', label: 'Platinum' },
+];
+
+// Occasions for recommendations
+export const OCCASIONS = [
+  { value: 'engagement', label: 'Engagement' },
+  { value: 'wedding', label: 'Wedding' },
+  { value: 'anniversary', label: 'Anniversary' },
+  { value: 'birthday', label: 'Birthday' },
+  { value: 'everyday', label: 'Everyday Wear' },
+  { value: 'gift', label: 'Gift' },
+];
+
+const aiConfig = {
+  getModel,
+  chatbotConfig,
+  API_ENDPOINTS,
+  API_BASE_URL,
+  SYSTEM_PROMPT,
+  QUICK_RESPONSES,
+  PRODUCT_CATEGORIES,
+  METAL_TYPES,
+  OCCASIONS,
 };
 
-// Gemini AI API Functions
-export const callGeminiAPI = async (prompt, apiKey = AI_CONFIG.GEMINI_API_KEY) => {
-  if (!apiKey) {
-    throw new Error('Gemini API key not configured');
-  }
-
-  try {
-    const response = await fetch(AI_CONFIG.GEMINI_API_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
-      },
-      body: JSON.stringify({
-        contents: [{
-          parts: [{
-            text: prompt
-          }]
-        }]
-      }),
-      timeout: AI_CONFIG.VALIDATION.API_TIMEOUT
-    });
-
-    if (!response.ok) {
-      throw new Error(`API request failed: ${response.status}`);
-    }
-
-    const data = await response.json();
-    return data.candidates[0].content.parts[0].text;
-  } catch (error) {
-    console.error('Gemini API error:', error);
-    throw new Error(AI_CONFIG.ERRORS.API_UNAVAILABLE);
-  }
-};
-
-// Utility Functions
-export const extractJewelryPreferences = (message) => {
-  const preferences = {
-    category: null,
-    metalType: null,
-    style: null,
-    occasion: null,
-    budget: null,
-    priceRange: null
-  };
-
-  const lowerMessage = message.toLowerCase();
-
-  // Category extraction
-  if (lowerMessage.includes('ring') || lowerMessage.includes('engagement') || lowerMessage.includes('wedding') || lowerMessage.includes('proposal')) {
-    preferences.category = 'rings';
-  } else if (lowerMessage.includes('necklace') || lowerMessage.includes('pendant') || lowerMessage.includes('chain')) {
-    preferences.category = 'necklaces';
-  } else if (lowerMessage.includes('earring') || lowerMessage.includes('stud') || lowerMessage.includes('hoop')) {
-    preferences.category = 'earrings';
-  } else if (lowerMessage.includes('bracelet') || lowerMessage.includes('bangle') || lowerMessage.includes('cuff')) {
-    preferences.category = 'bracelets';
-  }
-
-  // Metal type extraction
-  if (lowerMessage.includes('gold') && !lowerMessage.includes('white') && !lowerMessage.includes('rose')) {
-    preferences.metalType = 'gold';
-  } else if (lowerMessage.includes('white gold') || lowerMessage.includes('platinum')) {
-    preferences.metalType = 'white gold';
-  } else if (lowerMessage.includes('rose gold') || lowerMessage.includes('pink gold')) {
-    preferences.metalType = 'rose gold';
-  } else if (lowerMessage.includes('silver') || lowerMessage.includes('sterling')) {
-    preferences.metalType = 'sterling silver';
-  }
-
-  // Style extraction
-  if (lowerMessage.includes('classic') || lowerMessage.includes('traditional') || lowerMessage.includes('timeless')) {
-    preferences.style = 'classic';
-  } else if (lowerMessage.includes('modern') || lowerMessage.includes('contemporary') || lowerMessage.includes('trendy')) {
-    preferences.style = 'modern';
-  } else if (lowerMessage.includes('vintage') || lowerMessage.includes('antique') || lowerMessage.includes('retro')) {
-    preferences.style = 'vintage';
-  } else if (lowerMessage.includes('minimalist') || lowerMessage.includes('simple') || lowerMessage.includes('clean')) {
-    preferences.style = 'minimalist';
-  }
-
-  // Occasion extraction
-  if (lowerMessage.includes('engagement') || lowerMessage.includes('propose') || lowerMessage.includes('proposal')) {
-    preferences.occasion = 'engagement';
-  } else if (lowerMessage.includes('wedding') || lowerMessage.includes('marriage') || lowerMessage.includes('ceremony')) {
-    preferences.occasion = 'wedding';
-  } else if (lowerMessage.includes('anniversary') || lowerMessage.includes('celebration') || lowerMessage.includes('milestone')) {
-    preferences.occasion = 'anniversary';
-  } else if (lowerMessage.includes('daily') || lowerMessage.includes('everyday') || lowerMessage.includes('casual')) {
-    preferences.occasion = 'daily';
-  } else if (lowerMessage.includes('formal') || lowerMessage.includes('party') || lowerMessage.includes('event')) {
-    preferences.occasion = 'formal';
-  }
-
-  // Budget extraction
-  if (lowerMessage.includes('budget') || lowerMessage.includes('affordable') || lowerMessage.includes('cheap') || lowerMessage.includes('inexpensive')) {
-    preferences.budget = 'low';
-    preferences.priceRange = { min: 0, max: 1000 };
-  } else if (lowerMessage.includes('luxury') || lowerMessage.includes('premium') || lowerMessage.includes('expensive') || lowerMessage.includes('high-end')) {
-    preferences.budget = 'high';
-    preferences.priceRange = { min: 1000, max: 10000 };
-  } else if (lowerMessage.includes('mid') || lowerMessage.includes('moderate')) {
-    preferences.budget = 'medium';
-    preferences.priceRange = { min: 500, max: 2000 };
-  }
-
-  return preferences;
-};
-
-export default AI_CONFIG; 
+export default aiConfig;

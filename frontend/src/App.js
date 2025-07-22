@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { createBrowserRouter, RouterProvider, Navigate, Outlet } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { CartProvider } from './hooks/useCart';
 import Header from './components/Header';
@@ -21,44 +21,64 @@ function App() {
     setIsCartOpen(false);
   };
 
-  return (
-    <Router>
-      <CartProvider>
-        <div className="min-h-screen bg-white">
-          <Header onCartOpen={handleCartOpen} />
-          <main className="flex-1">
-            <Routes>
-              <Route path="/" element={<Navigate to="/shop" replace />} />
-              <Route path="/shop" element={<ShopPage />} />
-              <Route path="/product/:id" element={<ProductDetailPage />} />
-            </Routes>
-          </main>
-          <Footer />
-          <CartDrawer isOpen={isCartOpen} onClose={handleCartClose} />
-          <JewelryChatbot />
-          <Toaster 
-            position="bottom-left"
-            toastOptions={{
-              duration: 4000,
-              style: {
-                background: '#ffffff',
-                color: '#2c3e50',
-                border: '1px solid #e9ecef',
-                boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
-              },
-              success: {
-                duration: 3000,
-                iconTheme: {
-                  primary: '#d4af37',
-                  secondary: '#ffffff',
+  const router = createBrowserRouter([
+    {
+      path: "/",
+      element: (
+        <CartProvider>
+          <div className="min-h-screen bg-white">
+            <Header onCartOpen={handleCartOpen} />
+            <main className="flex-1">
+              <Outlet />
+            </main>
+            <Footer />
+            <CartDrawer isOpen={isCartOpen} onClose={handleCartClose} />
+            <JewelryChatbot />
+            <Toaster 
+              position="bottom-left"
+              toastOptions={{
+                duration: 4000,
+                style: {
+                  background: '#ffffff',
+                  color: '#2c3e50',
+                  border: '1px solid #e9ecef',
+                  boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
                 },
-              },
-            }}
-          />
-        </div>
-      </CartProvider>
-    </Router>
-  );
+                success: {
+                  duration: 3000,
+                  iconTheme: {
+                    primary: '#d4af37',
+                    secondary: '#ffffff',
+                  },
+                },
+              }}
+            />
+          </div>
+        </CartProvider>
+      ),
+      children: [
+        {
+          index: true,
+          element: <Navigate to="/shop" replace />
+        },
+        {
+          path: "shop",
+          element: <ShopPage />
+        },
+        {
+          path: "product/:id",
+          element: <ProductDetailPage />
+        }
+      ]
+    }
+  ], {
+    future: {
+      v7_startTransition: true,
+      v7_relativeSplatPath: true
+    }
+  });
+
+  return <RouterProvider router={router} />;
 }
 
 export default App; 
